@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package platform.events.v1;
+
+option go_package = "github.com/gcp-data-platform/schema-management/gen/platform/events/v1;eventsv1";
+option java_multiple_files = true;
+option java_outer_classname = "TransactionProto";
+option java_package = "com.platform.events.v1";
+
+// TransactionEvent contains details specific to standard commercial/purchase transactions.
+message TransactionEvent {
+  // Replicated Timestamp message locally to avoid import errors in Pub/Sub.
+  message Timestamp {
+    int64 seconds = 1;
+    int32 nanos = 2;
+  }
+
+  // Common telemetry fields (flattened)
+  string event_id = 1;
+  Timestamp timestamp = 2;
+  string event_name = 3;
+  string source = 4;
+  string user_id = 5;
+
+  // Represents a single item purchased in the transaction.
+  message Item {
+    string item_id = 1;
+    string name = 2;
+    double price = 3;
+    int32 quantity = 4;
+  }
+
+  // State of the transaction.
+  enum TransactionStatus {
+    TRANSACTION_STATUS_UNSPECIFIED = 0;
+    TRANSACTION_STATUS_PENDING = 1;
+    TRANSACTION_STATUS_SUCCESS = 2;
+    TRANSACTION_STATUS_FAILED = 3;
+  }
+
+  // Unique identifier for the transaction.
+  string transaction_id = 6;
+
+  // Total monetary amount of the transaction.
+  double amount = 7;
+
+  // ISO 4217 three-letter currency code (e.g., "USD", "EUR").
+  string currency = 8;
+
+  // List of items included in this transaction.
+  repeated Item items = 9;
+
+  // Current status of the transaction.
+  TransactionStatus status = 10;
+}

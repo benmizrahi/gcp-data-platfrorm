@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package platform.events.v1;
+
+import "platform/events/v1/login.proto";
+import "platform/events/v1/level.proto";
+import "platform/events/v1/transaction.proto";
+
+option go_package = "github.com/gcp-data-platform/schema-management/gen/platform/events/v1;eventsv1";
+option java_multiple_files = true;
+option java_outer_classname = "IngestionProto";
+option java_package = "com.platform.events.v1";
+
+// IngestionService exposes a single unified endpoint to ingest real-time telemetry events.
+service IngestionService {
+  // Ingests any telemetry event into the GCP Data Platform.
+  rpc IngestEvent(IngestEventRequest) returns (IngestEventResponse);
+}
+
+// Request wrapper containing any type of telemetry event payload.
+message IngestEventRequest {
+  oneof payload {
+    // User login authentication event payload.
+    LoginEvent login = 1;
+
+    // Game-play level progression event payload.
+    LevelEvent level = 2;
+
+    // E-commerce transaction purchase event payload.
+    TransactionEvent transaction = 3;
+  }
+}
+
+// Response containing unique tracking ID and status of the ingested event.
+message IngestEventResponse {
+  // The unique ID generated or validated for this event.
+  string event_id = 1;
+
+  // The ingestion status (e.g., "SUCCESS", "FAILED").
+  string status = 2;
+}

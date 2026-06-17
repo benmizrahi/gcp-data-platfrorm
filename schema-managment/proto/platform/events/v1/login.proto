@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package platform.events.v1;
+
+option go_package = "github.com/gcp-data-platform/schema-management/gen/platform/events/v1;eventsv1";
+option java_multiple_files = true;
+option java_outer_classname = "LoginProto";
+option java_package = "com.platform.events.v1";
+
+// LoginEvent contains details specific to user authentication/login.
+message LoginEvent {
+  // Replicated Timestamp message locally to avoid import errors in Pub/Sub.
+  message Timestamp {
+    int64 seconds = 1;
+    int32 nanos = 2;
+  }
+
+  // Common telemetry fields (flattened)
+  string event_id = 1;
+  Timestamp timestamp = 2;
+  string event_name = 3;
+  string source = 4;
+  string user_id = 5;
+
+  // Supported login providers/methods.
+  enum LoginMethod {
+    LOGIN_METHOD_UNSPECIFIED = 0;
+    LOGIN_METHOD_EMAIL = 1;
+    LOGIN_METHOD_GOOGLE = 2;
+    LOGIN_METHOD_APPLE = 3;
+    LOGIN_METHOD_FACEBOOK = 4;
+    LOGIN_METHOD_ANONYMOUS = 5;
+  }
+
+  // The method used to log in.
+  LoginMethod method = 6;
+
+  // Whether the login attempt succeeded.
+  bool success = 7;
+
+  // The error message if the login attempt failed.
+  string error_message = 8;
+
+  // Client IP address of the user.
+  string ip_address = 9;
+
+  // User-Agent string of the user's client device.
+  string user_agent = 10;
+}

@@ -1,0 +1,20 @@
+# .gcloudignore
+# Exclude git and editor metadata
+.git
+.github
+.vscode
+.idea
+
+# Exclude local build artifacts that are not needed
+.terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+
+# Keep go.work and generated files (override .gitignore defaults for cloud build uploads)
+!go.work
+!go.work.sum
+!**/gen
+!**/gen/**
