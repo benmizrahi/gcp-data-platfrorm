@@ -90,15 +90,77 @@ To compile schemas, build and push the container image to Google Cloud Build, an
 make deploy PROJECT_ID=your-gcp-project-id
 ```
 
+### Retrieving the Ingestion Service URL
+After a successful deployment, the URL of the ingestion service is printed in the terminal as `ingestion_service_url`.
+
+You can also retrieve it at any time using:
+* **Via Terraform Outputs**:
+  ```bash
+  cd pipeline-infrastrcture
+  terraform output -raw ingestion_service_url
+  ```
+* **Via Google Cloud CLI (gcloud)**:
+  ```bash
+  gcloud run services describe dev-platform-ingestion \
+    --region=us-central1 \
+    --format='value(status.url)' \
+    --project your-gcp-project-id
+  ```
+
 ---
 
-## 6. How to Ingest Events (API Examples)
+## 6. API Token & Environment Configuration
+
+The Ingestion Service validates client requests using a secure API Token.
+
+### A. Local Development Only (`.env` file)
+> [!IMPORTANT]
+> The `.env` file is strictly for **local development and testing**. It is pre-configured in `.gitignore` and must **never** be committed to git or used for production configurations.
+
+To run or test the ingestion service locally, configure a `.env` file inside the `ingestion-service/` directory:
+
+1. Create or edit the `ingestion-service/.env` file:
+   ```env
+   # GCP Project ID where the Pub/Sub topics are hosted
+   GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+
+   # Port configuration
+   PORT=8080
+   GRPC_PORT=50051
+
+   # Secret API Ingestion Token
+   # Shared secret between client applications and this ingestion gateway.
+   INGESTION_API_TOKEN=your-secure-token-here
+
+   # Pub/Sub Topic Mappings
+   PUBSUB_TOPIC_LOGIN=dev-platform-login
+   PUBSUB_TOPIC_LEVEL=dev-platform-level
+   PUBSUB_TOPIC_TRANSACTION=dev-platform-transaction
+   ```
+
+### B. Production Deployment (Terraform Secrets)
+For Google Cloud Run, the `INGESTION_API_TOKEN` is injected as a container environment variable by Terraform. 
+
+To configure your secret production token safely:
+1. Create a `terraform.tfvars` file in the `pipeline-infrastrcture/` directory (this file is pre-configured in `.gitignore` so it won't be committed to source control):
+   ```hcl
+   project_id          = "your-gcp-project-id"
+   ingestion_api_token = "your-secure-production-token-here"
+   ```
+2. Run your deployment command passing the token as a parameter:
+   ```bash
+   make deploy PROJECT_ID=your-gcp-project-id INGESTION_API_TOKEN=your-secure-production-token-here
+   ```
+
+---
+
+## 7. How to Ingest Events (API Examples)
 
 The ingestion service URL can be fetched from Terraform output (`ingestion_service_url`). Use the Authorization header with your `INGESTION_API_TOKEN` (default is `dev-secure-token-12345`).
 
 ### 1. Ingest a Login Event
 ```bash
-curl -X POST https://YOUR-INGESTION-SERVICE-URL/api/v1/events \
+curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/events \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer dev-secure-token-12345" \
   -d '{
@@ -114,7 +176,7 @@ curl -X POST https://YOUR-INGESTION-SERVICE-URL/api/v1/events \
 
 ### 2. Ingest a Level Progression Event
 ```bash
-curl -X POST https://YOUR-INGESTION-SERVICE-URL/api/v1/events \
+curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/events \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer dev-secure-token-12345" \
   -d '{
@@ -130,7 +192,7 @@ curl -X POST https://YOUR-INGESTION-SERVICE-URL/api/v1/events \
 
 ### 3. Ingest a Transaction Event
 ```bash
-curl -X POST https://YOUR-INGESTION-SERVICE-URL/api/v1/events \
+curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/events \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer dev-secure-token-12345" \
   -d '{

@@ -50,7 +50,8 @@ resource "google_project_service" "apis" {
     "pubsub.googleapis.com",
     "bigquery.googleapis.com",
     "run.googleapis.com",
-    "iam.googleapis.com"
+    "iam.googleapis.com",
+    "secretmanager.googleapis.com"
   ])
 
   project            = var.project_id
@@ -206,6 +207,32 @@ resource "google_project_iam_member" "publisher" {
   member  = "serviceAccount:${google_service_account.ingestion_runner.email}"
 }
 
+# Secret Manager Secret to store the secure API Ingestion Token
+resource "google_secret_manager_secret" "ingestion_api_token" {
+  secret_id = "${local.name_prefix}-ingestion-api-token"
+  labels = {
+    environment = var.environment
+    managed_by  = "terraform"
+  }
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.apis]
+}
+
+# The secret version storing the actual token value
+resource "google_secret_manager_secret_version" "ingestion_api_token_version" {
+  secret      = google_secret_manager_secret.ingestion_api_token.id
+  secret_data = var.ingestion_api_token
+}
+
+# Authorize the Cloud Run service account to access this secret version
+resource "google_secret_manager_secret_iam_member" "runner_secret_accessor" {
+  secret_id = google_secret_manager_secret.ingestion_api_token.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.ingestion_runner.email}"
+}
+
 # The Cloud Run Service itself
 resource "google_cloud_run_v2_service" "ingestion" {
   name     = "${local.name_prefix}-ingestion"
@@ -227,8 +254,13 @@ resource "google_cloud_run_v2_service" "ingestion" {
         value = var.project_id
       }
       env {
-        name  = "INGESTION_API_TOKEN"
-        value = var.ingestion_api_token
+        name = "INGESTION_API_TOKEN"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.ingestion_api_token.secret_id
+            version = google_secret_manager_secret_version.ingestion_api_token_version.version
+          }
+        }
       }
       env {
         name  = "PUBSUB_TOPIC_LOGIN"

@@ -2,6 +2,7 @@
 # Set PROJECT_ID to your target GCP Project (default is catchme-poc)
 PROJECT_ID ?= catchme-poc
 COMMIT_SHA := $(shell git log -1 --format="%H" 2>/dev/null || echo "latest")
+INGESTION_API_TOKEN ?= dev-secure-token-12345
 
 .PHONY: all generate build deploy clean
 
@@ -21,7 +22,7 @@ build: generate
 # Step 3: Run Terraform apply to deploy the entire environment
 deploy: build
 	@echo "==> Provisioning infrastructure with Terraform..."
-	cd pipeline-infrastrcture && terraform init && terraform apply -var="project_id=$(PROJECT_ID)" -var="image_tag=$(COMMIT_SHA)" -auto-approve
+	cd pipeline-infrastrcture && terraform init && terraform apply -var="project_id=$(PROJECT_ID)" -var="image_tag=$(COMMIT_SHA)" -var="ingestion_api_token=$(INGESTION_API_TOKEN)" -auto-approve
 
 
 clean:

@@ -1,0 +1,55 @@
+# GCP Data Platform CI/CD Build Pipeline
+#
+# This pipeline automates the entire deployment process on Google Cloud:
+# 1. Compile Protobuf event contracts and generate BigQuery schema JSONs using Buf.
+# 2. Build the Go ingestion-service container image using the workspace root context.
+# 3. Push the docker image with the specific commit SHA tag and 'latest' tag to GCR.
+# 4. Initialize and apply Terraform to deploy GCP resources (Pub/Sub, BigQuery, IAM, Cloud Run).
+
+steps:
+  # Step 1: Run Buf code generation to compile protobufs and generate BigQuery schemas
+  - name: 'bufbuild/buf:1.26.0'
+    id: 'generate-schemas'
+    args: ['generate']
+    dir: 'schema-managment'
+
+  # Step 2: Build the container image using the workspace root as context
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-ingestion-image'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/ingestion-service:latest'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/ingestion-service:$COMMIT_SHA'
+      - '-f'
+      - 'ingestion-service/Dockerfile'
+      - '.'
+
+  # Step 3: Push the commit-tagged image to GCR
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-commit-tag'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/ingestion-service:$COMMIT_SHA'
+
+  # Step 4: Push the latest-tagged image to GCR
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-latest-tag'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/ingestion-service:latest'
+
+  # Step 5: Initialize and run Terraform to deploy/update resources
+  # Note: For production use, you should configure a remote GCS backend in pipeline-infrastrcture/main.tf
+  - name: 'hashicorp/terraform:1.5.7'
+    id: 'terraform-apply'
+    dir: 'pipeline-infrastrcture'
+    args:
+      - 'apply'
+      - '-auto-approve'
+      - '-var=project_id=$PROJECT_ID'
+      - '-var=image_tag=$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
