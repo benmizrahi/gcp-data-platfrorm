@@ -87,7 +87,7 @@ make generate
 ### Complete Cloud Deployment
 To compile schemas, build and push the container image to Google Cloud Build, and provision all resources via Terraform:
 ```bash
-make deploy PROJECT_ID=your-gcp-project-id
+make deploy PROJECT_ID=catchme-poc INGESTION_API_TOKEN=data123
 ```
 
 ### Retrieving the Ingestion Service URL
@@ -149,20 +149,20 @@ To configure your secret production token safely:
    ```
 2. Run your deployment command passing the token as a parameter:
    ```bash
-   make deploy PROJECT_ID=your-gcp-project-id INGESTION_API_TOKEN=your-secure-production-token-here
+   make deploy PROJECT_ID=catchme-poc INGESTION_API_TOKEN=data123
    ```
 
 ---
 
 ## 7. How to Ingest Events (API Examples)
 
-The ingestion service URL can be fetched from Terraform output (`ingestion_service_url`). Use the Authorization header with your `INGESTION_API_TOKEN` (default is `dev-secure-token-12345`).
+The ingestion service URL can be fetched from Terraform output (`ingestion_service_url`). Use the Authorization header with your `INGESTION_API_TOKEN` (e.g., `data123`).
 
 ### 1. Ingest a Login Event
 ```bash
 curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/events \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer dev-secure-token-12345" \
+  -H "Authorization: Bearer data123" \
   -d '{
     "event_name": "user.login",
     "source": "curl-test",
@@ -178,7 +178,7 @@ curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/event
 ```bash
 curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/events \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer dev-secure-token-12345" \
+  -H "Authorization: Bearer data123" \
   -d '{
     "event_name": "level.progression",
     "source": "curl-test",
@@ -194,7 +194,7 @@ curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/event
 ```bash
 curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/events \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer dev-secure-token-12345" \
+  -H "Authorization: Bearer data123" \
   -d '{
     "event_name": "commerce.purchase",
     "source": "curl-test",
