@@ -213,3 +213,9 @@ curl -X POST https://dev-platform-ingestion-k4oohmjbaa-uc.a.run.app/api/v1/event
     "status": "TRANSACTION_STATUS_SUCCESS"
   }'
 ```
+
+---
+
+## Disclaimer
+
+This is not an officially supported Google product.
